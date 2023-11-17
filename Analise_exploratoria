@@ -1,0 +1,569 @@
+# create: Stephany Lazo
+
+# Analise explorátoria de dadospara ALM
+rm(list=ls())
+#######################
+# Library
+library(tidyverse)
+library(gdata)
+library(gridExtra)
+library(readxl)
+library(scatterplot3d)
+library(rgl)
+library(KernSmooth)
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+library(writexl)
+
+dados_ativos = read_excel("Z:/ArquivosTI/Atuario202309.xlsx", 
+                          sheet = "Ativo", col_types = c("numeric", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "text",
+                                                         "text", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "text",
+                                                         "text", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric", 
+                                                         "text",
+                                                         "text", 
+                                                         "numeric",
+                                                         "numeric", 
+                                                         "date",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "date",
+                                                         "date", 
+                                                         "date",
+                                                         "text",
+                                                         "date",
+                                                         "text", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric", 
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "date",
+                                                         "numeric",
+                                                         "numeric",
+                                                         "date"))
+dados_ativos_filtrados <- subset(dados_ativos, CO_TIPO_FUNDO == 1)
+
+dados_inativos = read_excel("Z:/ArquivosTI/Atuario202309.xlsx", 
+                            sheet = "Inativo", col_types = c("numeric", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "text",
+                                                             "text", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "text",
+                                                             "text", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric", 
+                                                             "text",
+                                                             "text", 
+                                                             "numeric",
+                                                             "numeric", 
+                                                             "date",
+                                                             "date",
+                                                             "date",
+                                                             "date",
+                                                             "numeric", 
+                                                             "text",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric", 
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric"))
+dados_inativos_filtrados <- subset(dados_inativos, CO_TIPO_FUNDO == 1)
+
+
+dados_pensionista = read_excel("Z:/ArquivosTI/Atuario202309.xlsx", 
+                               sheet = "Pensionista", col_types = c("numeric", 
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "text",
+                                                                    "text", 
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "text",
+                                                                    "text", 
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric", 
+                                                                    "numeric",
+                                                                    "text", 
+                                                                    "numeric",
+                                                                    "numeric", 
+                                                                    "date",
+                                                                    "date",
+                                                                    "numeric", 
+                                                                    "text",
+                                                                    "numeric",
+                                                                    "date",
+                                                                    "numeric", 
+                                                                    "date",
+                                                                    "numeric",
+                                                                    "numeric", 
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric",
+                                                                    "numeric"))
+dados_pensionista_filtrados <- subset(dados_pensionista, CO_TIPO_FUNDO == 1)
+
+################################# ATIVOS ######################################
+dados_ativos_filtrados = dados_ativos_filtrados %>% distinct(dados_ativos_filtrados$ID_SERVIDOR_CPF, .keep_all = TRUE)
+dados_ativos_filtrados = filter(dados_ativos_filtrados, dados_ativos_filtrados$CO_COMP_MASSA != 2)
+dados_ativos_filtrados$data_focal =  rep(as.Date("2023/07/31"), length(dados_ativos_filtrados$ID_SERVIDOR_CPF))
+
+class(dados_ativos_filtrados$DT_NASC_SERVIDOR)
+
+# transformando em formato data
+dados_ativos_filtrados$DT_NASC_SERVIDOR = as.Date(dados_ativos_filtrados$DT_NASC_SERVIDOR)
+
+# Calculando a idade
+dados_ativos_filtrados$idade = floor((dados_ativos_filtrados$data_focal - dados_ativos_filtrados$DT_NASC_SERVIDOR)/365.25)
+
+dados_ativos_filtrados$idade = as.numeric(dados_ativos_filtrados$idade)
+
+# Transformando em formato data
+dados_ativos_filtrados$DT_ING_SERV_PUB = as.Date(dados_ativos_filtrados$DT_ING_SERV_PUB)
+
+# Calculando o tempo de serviço publico
+dados_ativos_filtrados$tempo_servico_publico = floor((dados_ativos_filtrados$data_focal - dados_ativos_filtrados$DT_ING_SERV_PUB)/365.25)
+
+dados_ativos_filtrados$tempo_servico_publico = as.numeric(dados_ativos_filtrados$tempo_servico_publico)
+
+# TRANSFORMANDO EM FORMATO DATA
+dados_ativos_filtrados$DT_ING_ENTE = as.Date(dados_ativos_filtrados$DT_ING_ENTE)
+
+# Calculando o tempo de serviço no ente 
+dados_ativos_filtrados$tempo_servico_ente = floor((dados_ativos_filtrados$data_focal - dados_ativos_filtrados$DT_ING_ENTE)/365.25)
+
+dados_ativos_filtrados$tempo_servico_ente = as.numeric(dados_ativos_filtrados$tempo_servico_ente)
+
+# Calculando a averbação
+dados_ativos_filtrados$averbacao_total = ((dados_ativos_filtrados$NU_TEMPO_RGPS + 
+                                  dados_ativos_filtrados$NU_TEMPO_RPPS_MUN +
+                                  dados_ativos_filtrados$NU_TEMPO_RPPS_EST + 
+                                  dados_ativos_filtrados$NU_TEMPO_RPPS_FED)/365.25)
+
+dados_ativos_filtrados$averbacao_total = as.numeric(dados_ativos_filtrados$averbacao_total)
+
+# CALCULO IEN
+dados_ativos_filtrados$IEN = ifelse((dados_ativos_filtrados$tempo_servico_ente - floor(dados_ativos_filtrados$averbacao_total))<18,
+                          25,
+                          (ifelse((dados_ativos_filtrados$tempo_servico_ente - floor(dados_ativos_filtrados$averbacao_total))>25,
+                                  25,
+                                  (dados_ativos_filtrados$tempo_servico_ente - floor(dados_ativos_filtrados$averbacao_total)))))
+
+# CALCULO DA DATA QUE O SERVIDOR ESTA APTO PARA A APOSENTADORIA
+dados_ativos_filtrados$data_apto_aposentadoria = 
+  ifelse((dados_ativos_filtrados$CO_TIPO_CARGO == 2 | dados_ativos_filtrados$CO_TIPO_CARGO == 3 & dados_ativos_filtrados$CO_SEXO_SERVIDOR == 1),
+         dados_ativos_filtrados$data_apto_aposentadoria == max(50, dados_ativos_filtrados$IEN + 25),
+         ifelse((dados_ativos_filtrados$CO_TIPO_CARGO == 2 | dados_ativos_filtrados$CO_TIPO_CARGO == 3 & dados_ativos_filtrados$CO_SEXO_SERVIDOR == 2),
+                dados_ativos_filtrados$data_apto_aposentadoria == max(55, dados_ativos_filtrados$IEN + 30),
+                ifelse((dados_ativos_filtrados$CO_COMP_MASSA == 1 & dados_ativos_filtrados$CO_TIPO_CARGO == 4 & dados_ativos_filtrados$CO_SEXO_SERVIDOR == 1),
+                       dados_ativos_filtrados$IEN+25,
+                       ifelse((dados_ativos_filtrados$CO_COMP_MASSA == 1 & dados_ativos_filtrados$CO_TIPO_CARGO == 4 & dados_ativos_filtrados$CO_SEXO_SERVIDOR == 2),
+                              dados_ativos_filtrados$IEN+30,
+                              ifelse(dados_ativos_filtrados$CO_SEXO_SERVIDOR == 1,
+                                     max(55, dados_ativos_filtrados$IEN+30),
+                                     max(60, dados_ativos_filtrados$IEN+35))))))
+
+# CALCULANDO O "DEFERIMENTO"
+dados_ativos_filtrados$deferimento = ifelse((dados_ativos_filtrados$idade - dados_ativos_filtrados$data_apto_aposentadoria) < 0,
+                                  0,
+                                  dados_ativos_filtrados$idade - dados_ativos_filtrados$data_apto_aposentadoria)
+
+# Calculando o tempo de serviço total
+dados_ativos_filtrados$tempo_servico_total = (dados_ativos_filtrados$tempo_servico_ente) + (dados_ativos_filtrados$averbacao_total) 
+
+# Quantidade de mulheres e homens na base 
+ativos_fem = filter(dados_ativos_filtrados, dados_ativos_filtrados$CO_SEXO_SERVIDOR == 1)
+ativos_masc = filter(dados_ativos_filtrados, dados_ativos_filtrados$CO_SEXO_SERVIDOR == 2)
+
+# Quantidade de servidores ativos
+qntd_fem = length(ativos_fem$ID_SERVIDOR_CPF)  
+qntd_masc = length(ativos_masc$ID_SERVIDOR_CPF)  
+
+# Média das idades dos servidors por sexo
+m_idade_fem = mean(ativos_fem$idade)
+m_idade_masc = mean(ativos_masc$idade) 
+
+# média da averbação por sexo
+m_averbacao_fem = mean(ativos_fem$averbacao_total)
+m_averbacao__masc =mean(ativos_masc$averbacao_total)
+
+# Média do tempo de servço publico  por sexo 
+m_tempo_servico_publico_fem = mean(ativos_fem$tempo_servico_publico)
+m_tempo_servico_publico_masc = mean(ativos_masc$tempo_servico_publico)
+
+# Média do tempo de servço total  por sexo 
+m_tempo_servico_total_fem = mean(ativos_fem$tempo_servico_total)
+m_tempo_servico_total_masc = mean(ativos_masc$tempo_servico_total)
+
+# DEFERIMENTO MÉDIO POR SEXO 
+m_deferimento_fem = mean(ativos_fem$deferimento)
+m_deferimento_masc = mean(ativos_masc$deferimento)
+
+# Média do valor da remuneração por sexo 
+m_remuneracao_fem = mean(ativos_fem$VL_REMUNERACAO)
+m_remuneracao_masc = mean(ativos_masc$VL_REMUNERACAO)
+
+# Criando a tabela ativos
+tab_ativos = data.frame(DESCRIMINACAO = c("Quantidade",
+                                          "Idade Média",
+                                          "Tempo Médio de Averbação",
+                                          "Tempo Médio de Serviço Público",
+                                          "Tempo Médio de Serviço Total",
+                                          "Deferimento Médio",
+                                          "Remuneração Média"),
+                        FEMININO = c(qntd_fem,
+                                     m_idade_fem,
+                                     m_averbacao_fem,
+                                     m_tempo_servico_publico_fem,
+                                     m_tempo_servico_total_fem,
+                                     m_deferimento_fem,
+                                     m_remuneracao_fem),
+                        MASCULINO = c(qntd_masc,
+                                      m_idade_masc,
+                                      m_averbacao__masc,
+                                      m_tempo_servico_publico_masc,
+                                      m_tempo_servico_total_masc,
+                                      m_deferimento_masc,
+                                      m_remuneracao_masc))
+
+
+################################## INATIVO #####################################
+dados_inativos_filtrados = dados_inativos_filtrados %>% distinct(dados_inativos_filtrados$ID_APOSENTADO_CPF, .keep_all = TRUE)
+dados_inativos_filtrados = filter(dados_inativos_filtrados, dados_inativos_filtrados$CO_COMP_MASSA != 2)
+dados_inativos_filtrados$data_focal =  rep(as.Date("2023/07/31"), length(dados_inativos_filtrados$ID_APOSENTADO_CPF))
+
+class(dados_inativos_filtrados$DT_NASC_APOSENTADO)
+
+# transformando em formato data
+dados_inativos_filtrados$DT_NASC_APOSENTADO = as.Date(dados_inativos_filtrados$DT_NASC_APOSENTADO)
+
+# Calculando a idade
+dados_inativos_filtrados$idade = floor((dados_inativos_filtrados$data_focal - dados_inativos_filtrados$DT_NASC_APOSENTADO)/365.25)
+
+dados_inativos_filtrados$idade = as.numeric(dados_inativos_filtrados$idade)
+
+# ANalise da base inativos
+
+qnt_inativos = length(dados_inativos_filtrados$ID_APOSENTADO_CPF) 
+id_media_inativos = mean(dados_inativos_filtrados$idade)
+vl_media_inativoos = mean(dados_inativos_filtrados$VL_APOSENTADORIA)
+
+# Tipo de aposentadoria
+aposentadoria_invalidez = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 4)
+aposentadoria_tempo_contribucao = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 2)
+aposentadoria_idade = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 1)
+aposentadoria_professor = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 5)
+aposentadoria_compusoria = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 3)
+aposentadoria_especial = dados_inativos_filtrados %>% filter(CO_TIPO_APOSENTADORIA == 6 | CO_TIPO_APOSENTADORIA == 7)
+
+# Separando por sexo e tipo de aposentadorira
+sexo = function(tipo, sexo){
+  db = filter(tipo, tipo$CO_SEXO_APOSENTADO == sexo)
+  return(db)
+}
+
+inat_invalidez_fem = sexo(aposentadoria_invalidez, 1)
+inat_invalidez_masc = sexo(aposentadoria_invalidez, 2)
+
+inat_tempo_contr_fem = sexo(aposentadoria_tempo_contribucao, 1)
+inat_tempo_contr_masc = sexo(aposentadoria_tempo_contribucao, 2)
+
+inat_idade_fem = sexo(aposentadoria_idade, 1)
+inat_idade_masc = sexo(aposentadoria_idade, 2)
+
+inat_prof_fem = sexo(aposentadoria_professor, 1)
+inat_prof_masc = sexo(aposentadoria_professor, 2)
+
+inat_compusoria_fem = sexo(aposentadoria_compusoria, 1)
+inat_compusoria_masc = sexo(aposentadoria_compusoria, 2)
+
+# inat_especial_fem = sexo(aposentadoria_especial, 1) # FOI DESCONSIDERADO POIS NÃO HÁ NINGUEM COM APOSENTADORIA ESPECIAL
+# inat_especial_masc = sexo(aposentadoria_especial, 2)   
+
+# Quantidade de aposentados por tipo de aposentadoria
+
+qnt_invalidez_fem = length(inat_invalidez_fem$ID_APOSENTADO_CPF) 
+qnt_invalidez_masc = length(inat_invalidez_masc$ID_APOSENTADO_CPF)
+qnt_invalidez = length(aposentadoria_invalidez$ID_APOSENTADO_CPF)
+
+qnt_tempo_contr_fem = length(inat_tempo_contr_fem$ID_APOSENTADO_CPF)
+qnt_tempo_contr_masc = length(inat_tempo_contr_masc$ID_APOSENTADO_CPF)
+qnt_tempo_contr = length(aposentadoria_tempo_contribucao$ID_APOSENTADO_CPF)
+
+qnt_inat_idade_fem = length(inat_idade_fem$ID_APOSENTADO_CPF)
+qnt_inat_idade_masc = length(inat_idade_masc$ID_APOSENTADO_CPF)
+qnt_inat_idade = length(aposentadoria_idade$ID_APOSENTADO_CPF)
+
+qnt_prof_fem = length(inat_prof_fem$ID_APOSENTADO_CPF)
+qnt_prof_masc = length(inat_prof_masc$ID_APOSENTADO_CPF) 
+qnt_prof = length(aposentadoria_professor$ID_APOSENTADO_CPF)
+
+qnt_compusoria_fem = length(inat_compusoria_fem$ID_APOSENTADO_CPF)
+qnt_compusoria_masc = length(inat_compusoria_masc$ID_APOSENTADO_CPF)
+qnt_compusoria = length(aposentadoria_compusoria$ID_APOSENTADO_CPF)
+
+# qnt_especial_fem = length(inat_especial_fem$ID_APOSENTADO_CPF)
+# qnt_especial_masc = length(inat_especial_masc$ID_APOSENTADO_CPF)
+# qnt_especial = length(aposentadoria_especial$ID_APOSENTADO_CPF)
+
+# Média de idade
+id_media_invalidez_fem = mean(inat_invalidez_fem$idade) 
+id_media_invalidez_masc = mean(inat_invalidez_masc$idade)
+id_media_invalidez = mean(aposentadoria_invalidez$idade)
+
+id_media_tempo_contr_fem = mean(inat_tempo_contr_fem$idade)
+id_media_tempo_contr_masc = mean(inat_tempo_contr_masc$idade)
+id_media_tempo_contr = mean(aposentadoria_tempo_contribucao$idade)
+
+id_media_inat_idade_fem = mean(inat_idade_fem$idade)
+id_media_inat_idade_masc = mean(inat_idade_masc$idade)
+id_media_inat_idade = mean(aposentadoria_idade$idade)
+
+id_media_prof_fem = mean(inat_prof_fem$idade)
+id_media_prof_masc = mean(inat_prof_masc$idade) 
+id_media_prof = mean(aposentadoria_professor$idade) 
+
+id_media_compusoria_fem = mean(inat_compusoria_fem$idade)
+id_media_compusoria_masc = mean(inat_compusoria_masc$idade)
+id_media_compusoria = mean(aposentadoria_compusoria$idade)
+
+# id_media_especial_fem = mean(inat_especial_fem$idade)
+# id_media_especial_masc = mean(inat_especial_masc$idade)
+# id_media_especial = mean(aposentadoria_especial$idade)
+
+# Média do beneficio
+vl_media_invalidez_fem = mean(inat_invalidez_fem$VL_APOSENTADORIA) 
+vl_media_invalidez_masc = mean(inat_invalidez_masc$VL_APOSENTADORIA)
+vl_media_invalidez = mean(aposentadoria_invalidez$VL_APOSENTADORIA)
+
+vl_media_tempo_contr_fem = mean(inat_tempo_contr_fem$VL_APOSENTADORIA)
+vl_media_tempo_contr_masc = mean(inat_tempo_contr_masc$VL_APOSENTADORIA)
+vl_media_tempo_contr = mean(aposentadoria_tempo_contribucao$VL_APOSENTADORIA)
+
+vl_media_inat_idade_fem = mean(inat_idade_fem$VL_APOSENTADORIA)
+vl_media_inat_idade_masc = mean(inat_idade_masc$VL_APOSENTADORIA)
+vl_media_inat_idade = mean(aposentadoria_idade$VL_APOSENTADORIA)
+
+vl_media_prof_fem = mean(inat_prof_fem$VL_APOSENTADORIA)
+vl_media_prof_masc = mean(inat_prof_masc$VL_APOSENTADORIA) 
+vl_media_prof = mean(aposentadoria_professor$VL_APOSENTADORIA)
+
+vl_media_compusoria_fem = mean(inat_compusoria_fem$VL_APOSENTADORIA)
+vl_media_compusoria_masc = mean(inat_compusoria_masc$VL_APOSENTADORIA)
+vl_media_compusoria = mean(aposentadoria_compusoria$VL_APOSENTADORIA)
+
+# vl_media_especial_fem = mean(inat_especial_fem$VL_APOSENTADORIA)
+# vl_media_especial_masc = mean(inat_especial_masc$VL_APOSENTADORIA)
+# vl_media_especial = mean(aposentadoria_especial$VL_APOSENTADORIA)
+
+# POR SEXO
+inativos_fem = filter(dados_inativos_filtrados, dados_inativos_filtrados$CO_SEXO_APOSENTADO == 1)
+inativos_masc = filter(dados_inativos_filtrados, dados_inativos_filtrados$CO_SEXO_APOSENTADO == 2)
+
+
+qnt_fem_inat = length(inativos_fem$ID_APOSENTADO_CPF) 
+id_media_fem = mean(inativos_fem$idade)
+vl_media_fem = mean(inativos_fem$VL_APOSENTADORIA)
+
+qnt_masc_inat = length(inativos_masc$ID_APOSENTADO_CPF)
+id_media_masc = mean(inativos_masc$idade)
+vl_media_masc = mean(inativos_masc$VL_APOSENTADORIA)
+
+
+################################ Pensionista ##################################
+dados_pensionista_filtrados = dados_pensionista_filtrados %>% distinct(dados_pensionista_filtrados$ID_PENSIONISTA_CPF, .keep_all = TRUE)
+dados_pensionista_filtrados$data_focal =  rep(as.Date("2023/07/31"), length(dados_pensionista_filtrados$ID_INSTITUIDOR_CPF))
+
+class(dados_pensionista_filtrados$DT_NASC_PENSIONISTA)
+
+# transformando em formato data
+dados_pensionista_filtrados$DT_NASC_PENSIONISTA = as.Date(dados_pensionista_filtrados$DT_NASC_PENSIONISTA)
+
+# Calculando a idade
+dados_pensionista_filtrados$idade = floor((dados_pensionista_filtrados$data_focal - dados_pensionista_filtrados$DT_NASC_PENSIONISTA)/365.25)
+
+dados_pensionista_filtrados$idade = as.numeric(dados_pensionista_filtrados$idade)
+
+# Separando base por sexo 
+pensionista_fem = filter(dados_pensionista_filtrados, dados_pensionista_filtrados$CO_SEXO_INSTITUIDOR == 1)
+pensionista_masc = filter(dados_pensionista_filtrados, dados_pensionista_filtrados$CO_SEXO_INSTITUIDOR == 2)
+
+# Quantidade de pensionistas
+pensionista_qntd_fem = length(pensionista_fem$ID_INSTITUIDOR_CPF)  
+pensionista_qntd_masc = length(pensionista_masc$ID_INSTITUIDOR_CPF)  
+pensionista_qntd =  length(dados_pensionista_filtrados$ID_INSTITUIDOR_CPF)  
+  
+# Média das idades dos pensionistas
+id_media_pensionista_fem = mean(pensionista_fem$idade)
+id_media_pensionista_masc = mean(pensionista_masc$idade) 
+id_media_pensionista = mean(dados_pensionista_filtrados$idade) 
+
+# Média do valor do beneficio
+vl_media_pensionista_fem = mean(pensionista_fem$VL_BENEF_PENSAO)
+vl_media_pensionista_masc = mean(pensionista_masc$VL_BENEF_PENSAO)
+vl_media_pensionista = mean(dados_pensionista_filtrados$VL_BENEF_PENSAO)
+
+# Pensionistas + inativos
+inativo_2 = data.frame(idade = dados_inativos_filtrados$idade,
+                       vl = dados_inativos_filtrados$VL_APOSENTADORIA)
+
+pensionista_2 = data.frame(idade = dados_pensionista_filtrados$idade,
+                           vl = dados_pensionista_filtrados$VL_BENEF_PENSAO)
+pensionistas_inativos = rbind(inativo_2, pensionista_2)
+id_media_pensionista_inativos = mean(pensionistas_inativos$idade)
+vl_medio_pensionista_inativos = mean(pensionistas_inativos$vl)
+# Criando a tabela inativos e pensionistas
+tab_inativos_pensionistas = data.frame(BENEFÍCIO = c("Invalidez","Invalidez","Invalidez",
+                                        "Tempo de Contribuição","Tempo de Contribuição","Tempo de Contribuição",
+                                        "Idade","Idade","Idade",
+                                        "Professor","Professor","Professor",
+                                        "Compusória","Compusória","Compusória",
+                                        #                                        "Especial","Especial","Especial",                
+                                        "Pensionista","Pensionista","Pensionista",
+                                        "Total Geral","Total Geral","Total Geral"),
+                          ITEM = c("Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício",
+                                   #                                   "Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício",
+                                   "Quantidade","Idade Média","Benefício"),
+                          
+                          FEMININO = c(qnt_invalidez_fem,
+                                       id_media_invalidez_fem,
+                                       vl_media_invalidez_fem,
+                                       
+                                       qnt_tempo_contr_fem,
+                                       id_media_tempo_contr_fem,
+                                       vl_media_tempo_contr_fem,
+                                       
+                                       qnt_inat_idade_fem,
+                                       id_media_inat_idade_fem,
+                                       vl_media_inat_idade_fem,
+                                       
+                                       qnt_prof_fem,
+                                       id_media_prof_fem,
+                                       vl_media_prof_fem,
+                                       
+                                       qnt_compusoria_fem,
+                                       id_media_compusoria_fem,
+                                       vl_media_compusoria_fem,
+                                       
+                                       # qnt_especial_fem,
+                                       # id_media_especial_fem,
+                                       # vl_media_especial_fem,
+                                       
+                                       pensionista_qntd_fem,
+                                       id_media_pensionista_fem,
+                                       vl_media_pensionista_fem,
+                                       
+                                       qnt_fem_inat + pensionista_qntd_fem,
+                                       id_media_fem + id_media_pensionista_fem,
+                                       vl_media_fem + vl_media_pensionista_fem),
+                          
+                          MASCULINO = c(qnt_invalidez_masc,
+                                        id_media_invalidez_masc,
+                                        vl_media_invalidez_masc,
+                                        
+                                        qnt_tempo_contr_masc,
+                                        id_media_tempo_contr_masc,
+                                        vl_media_tempo_contr_masc,
+                                        
+                                        qnt_inat_idade_masc,
+                                        id_media_inat_idade_masc,
+                                        vl_media_inat_idade_masc,
+                                      
+                                        qnt_prof_masc,
+                                        id_media_prof_masc,
+                                        vl_media_prof_masc,
+                                        
+                                        qnt_compusoria_masc,
+                                        id_media_compusoria_masc,
+                                        vl_media_compusoria_masc,
+                                        
+                                        # qnt_especial_masc,
+                                        # id_media_especial_masc,
+                                        # vl_media_especial_masc,
+                                        
+                                        
+                                        pensionista_qntd_masc,
+                                        id_media_pensionista_masc,
+                                        vl_media_pensionista_masc,
+                                        
+                                        qnt_masc_inat+pensionista_qntd_masc,
+                                        id_media_masc + id_media_pensionista_masc,
+                                        vl_media_masc + vl_media_pensionista_masc),
+                          
+                          TOTAL = c(qnt_invalidez,
+                                    id_media_invalidez,
+                                    vl_media_invalidez,
+                                    
+                                    qnt_tempo_contr,
+                                    id_media_tempo_contr,
+                                    vl_media_tempo_contr,
+                                    
+                                    qnt_inat_idade,
+                                    id_media_inat_idade,
+                                    vl_media_inat_idade,
+                                    
+                                    qnt_prof,
+                                    id_media_prof,
+                                    vl_media_prof,
+                                    
+                                    qnt_compusoria,
+                                    id_media_compusoria,
+                                    vl_media_compusoria,
+                                    
+                                    # qnt_especial,
+                                    # id_media_especial,
+                                    # vl_media_especial,
+                                    
+                                    
+                                    pensionista_qntd,
+                                    id_media_pensionista,
+                                    vl_media_pensionista,
+                                    
+                                    qnt_inativos + pensionista_qntd,
+                                    id_media_pensionista_inativos,
+                                    vl_medio_pensionista_inativos))
+
+
+# Exportando tabelas para o Excel
+write_xlsx(list("Ativo" = tab_ativos,
+                "Inativo e Pesionista" = tab_inativos_pensionistas),
+           path = "Z:/GERENCIA/ÁREA PESSOAL/STEPHANY LAZO/obtido.xlsx")
+
